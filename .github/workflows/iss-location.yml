@@ -2,9 +2,8 @@ name: Log ISS Location Data Daily
 
 on:
   schedule:
-    # Runs at 12:00 UTC (noon) every day
-    - cron: "0 12 * * *"
-  workflow_dispatch: # Allows manual triggering
+    - cron: "0 12 * * *"   # Runs daily at 12:00 UTC
+  workflow_dispatch:       # Allow manual runs
 
 jobs:
   collect-iss-data:
@@ -13,19 +12,19 @@ jobs:
       contents: write
 
     steps:
-      # Step 1: Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Cache Python packages (repo-relative folder)
-      - name: Cache Python packages
+      - name: Ensure uv cache dir exists
+        run: mkdir -p .uv-cache
+
+      - name: Cache uv cache
         id: cache-step
         uses: actions/cache@v4
         with:
-          path: .uv          # relative to repo root
+          path: .uv-cache
           key: cache-d9751e1
 
-      # Step 3: Prime cache
       - name: prime-cache-d9751e1
         run: |
           if [ "${{ steps.cache-step.outputs.cache-hit }}" == "true" ]; then
@@ -34,22 +33,23 @@ jobs:
             echo "Cache miss!"
           fi
 
-      # Step 4: Install uv
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
+        with:
+          cache-local-path: .uv-cache   # force uv's cache into .uv-cache
 
-      # Step 5: Fetch ISS location data
       - name: Fetch ISS location data
         run: |
-          uv run --with requests python << 'EOF'
-          import requests
+          # Run the small Python snippet under uv and append to file
+          uv run --with requests python - <<'PY' >> iss-location.jsonl
+          import requests, datetime, json
+          ts = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+          r = requests.get("http://api.open-notify.org/iss-now.json").json()
+          lat = float(r["iss_position"]["latitude"])
+          lon = float(r["iss_position"]["longitude"])
+          print(json.dumps({"timestamp": ts, "latitude": lat, "longitude": lon}))
+          PY
 
-          data = requests.get('http://api.open-notify.org/iss-now.json').text
-          with open('iss-location.jsonl', 'a') as f:
-              f.write(data + '\n')
-          'EOF'
-
-      # Step 6: Commit & push changes
       - name: Commit and push changes
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
