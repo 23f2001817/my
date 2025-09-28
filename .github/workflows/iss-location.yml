@@ -21,7 +21,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.uv
-          key: cache-d9751e1   # ✅ exact cache key required
+          key: cache-d9751e1 # ✅ exact cache key required
 
       - name: prime-cache-d9751e1   # ✅ exact step name required
         run: |
