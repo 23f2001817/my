@@ -22,7 +22,7 @@ jobs:
           path: ~/.uv
           key: cache-d9751e1
 
-      - name: prime-cache-d9751e1
+      - name: prime-cache-d9751e1   # ✅ must be exactly this
         run: |
           if [ "${{ steps.cache_step.outputs.cache-hit }}" == "true" ]; then
             echo "Cache hit!"
