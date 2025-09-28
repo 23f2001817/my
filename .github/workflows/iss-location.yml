@@ -1,4 +1,4 @@
-﻿name: Log ISS Location Data Daily
+name: Log ISS Location Data Daily
 
 on:
   schedule:
