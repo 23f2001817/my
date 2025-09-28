@@ -2,9 +2,8 @@
 
 on:
   schedule:
-    # Runs at 12:00 UTC (noon) every day
     - cron: "0 12 * * *"
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   collect-iss-data:
@@ -23,7 +22,7 @@ jobs:
           path: ~/.uv
           key: cache-d9751e1
 
-      - name: prime-cache-d9751e1
+      - name: Show cache result
         run: |
           if [ "${{ steps.cache_step.outputs.cache-hit }}" == "true" ]; then
             echo "Cache hit!"
@@ -35,17 +34,16 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Fetch ISS location data
-        run: | # python
+        run: |
           uv run --with requests python << 'EOF'
           import requests
-
           data = requests.get('http://api.open-notify.org/iss-now.json').text
           with open('iss-location.jsonl', 'a') as f:
               f.write(data + '\n')
           'EOF'
 
       - name: Commit and push changes
-        run: | # shell
+        run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add iss-location.jsonl
